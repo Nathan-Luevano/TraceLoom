@@ -1,0 +1,5 @@
+{"line": 3, "labels": ["synthetic_change_user", "escalate"], "rules": {"synthetic_change_user": ["synthetic.escalate.su.login"], "escalate": ["synthetic.escalate.su.login"]}}
+{"line": 4, "labels": ["synthetic_privileged_command"], "rules": {"synthetic_privileged_command": ["synthetic.escalate.sudo.command"]}}
+{"line": 5, "labels": ["synthetic_auth_failure"], "rules": {"synthetic_auth_failure": ["synthetic.auth.failure"]}}
+{"line": 42, "labels": ["synthetic_out_of_range"], "rules": {}}
+this is not json

@@ -1,0 +1,6 @@
+Jun  1 08:00:01 authhost CRON[100]: pam_unix(cron:session): session opened for user root by (uid=0)
+Jun  1 08:00:02 authhost sshd[101]: Accepted password for testuser from 10.0.0.5 port 51234 ssh2
+Jun  1 08:05:11 authhost su[202]: pam_unix(su:session): session opened for user targetacct by testuser(uid=1000)
+Jun  1 08:05:12 authhost sudo[203]: testuser : TTY=pts/0 ; PWD=/home/testuser ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow
+Jun  1 08:06:40 authhost sshd[300]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.9 user=svc_probe
+this line is not syslog formatted garbage

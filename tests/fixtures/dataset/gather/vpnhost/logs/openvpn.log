@@ -1,0 +1,4 @@
+2031-06-01 08:00:00 198.51.100.20:40000 TLS: Initial packet from [AF_INET]198.51.100.20:40000, sid=aaaa1111 bbbb2222
+2031-06-01 08:00:01 198.51.100.20:40000 VERIFY OK: depth=0, CN=synthuser
+2031-06-01 08:00:02 synthuser/198.51.100.20:40000 peer info: IV_VER=2.4.4
+totally malformed vpn line

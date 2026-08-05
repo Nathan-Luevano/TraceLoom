@@ -1,0 +1,3 @@
+{"@timestamp": "2031-06-01T08:00:00.000Z", "host": {"name": "webhost", "cpu": {"pct": 0.05}}, "system": {"cpu": {"total": {"pct": 0.05}}}}
+{"@timestamp": "2031-06-01T08:00:45.000Z", "host": {"name": "webhost", "cpu": {"pct": 0.97}}, "system": {"cpu": {"total": {"pct": 0.97}}}}
+not json at all

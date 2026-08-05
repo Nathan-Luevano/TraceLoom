@@ -1,0 +1,4 @@
+Jun  1 08:00:00 dnsmasq[500]: query[A] www.example-test.invalid from 10.0.0.9
+Jun  1 08:00:00 dnsmasq[500]: forwarded www.example-test.invalid to 203.0.113.53
+Jun  1 08:00:01 dnsmasq[500]: reply www.example-test.invalid is 203.0.113.100
+not a dnsmasq line

@@ -1,0 +1,1 @@
+{"line": 3, "labels": ["synthetic_webshell"], "rules": {"synthetic_webshell": ["synthetic.webshell.cmd"]}}
