@@ -17,6 +17,7 @@ def test_auth_log_parses_su_login() -> None:
     assert outcome.event is not None
     assert outcome.event.action == "user_switch"
     assert outcome.event.principal == "targetacct"
+    assert outcome.event.resource == "testuser"
     assert outcome.event.timestamp.year == 2031
 
 

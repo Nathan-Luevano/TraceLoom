@@ -13,7 +13,10 @@ _LINE_PATTERN = re.compile(
     r"(?P<message>.*)$"
 )
 
-_SU_SUCCESS = re.compile(r"pam_unix\(su(?::session)?\):\s*session opened for user (?P<target>\S+)")
+_SU_SUCCESS = re.compile(
+    r"pam_unix\(su(?::session)?\):\s*session opened for user (?P<target>\S+)"
+    r"(\s+by\s+(?P<actor>\S+)\(uid=\d+\))?"
+)
 _SUDO_COMMAND = re.compile(r"(?P<actor>\S+)\s*:.*COMMAND=(?P<command>.+)$")
 _FAILED_LOGIN = re.compile(r"authentication failure.*user=(?P<target>\S+)")
 
@@ -48,6 +51,7 @@ class AuthLogParser:
         message = match.group("message")
         process = match.group("process").strip()
         principal: str | None = None
+        resource: str | None = None
         action = "log"
         outcome: str | None = None
 
@@ -58,10 +62,12 @@ class AuthLogParser:
         if su_match is not None:
             action = "user_switch"
             principal = su_match.group("target")
+            resource = su_match.group("actor")
             outcome = "success"
         elif sudo_match is not None:
             action = "privileged_command"
             principal = sudo_match.group("actor")
+            resource = sudo_match.group("command")
             outcome = "success"
         elif failed_match is not None:
             action = "authentication_failure"
@@ -79,7 +85,7 @@ class AuthLogParser:
             principal=principal,
             process=process,
             action=action,
-            resource=None,
+            resource=resource,
             outcome=outcome,
             source_ip=None,
             source_port=None,
