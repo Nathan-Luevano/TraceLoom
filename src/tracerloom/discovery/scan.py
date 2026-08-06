@@ -28,6 +28,7 @@ class DiscoveredHost:
 @dataclass(frozen=True, slots=True)
 class DatasetDiscovery:
     dataset_root: Path
+    dataset_name: str
     simulation_start: str
     simulation_end: str
     hosts: tuple[DiscoveredHost, ...]
@@ -49,7 +50,11 @@ def _load_dataset_yaml(dataset_root: Path) -> dict[str, str]:
     raw = yaml.safe_load(dataset_yaml_path.read_text())
     if not isinstance(raw, dict) or "start" not in raw or "end" not in raw:
         raise DatasetValidationError("dataset.yaml missing required start/end keys")
-    return {"start": str(raw["start"]), "end": str(raw["end"])}
+    return {
+        "start": str(raw["start"]),
+        "end": str(raw["end"]),
+        "name": str(raw.get("name", dataset_root.name)),
+    }
 
 
 def discover_dataset(dataset_root: Path) -> DatasetDiscovery:
@@ -96,6 +101,7 @@ def discover_dataset(dataset_root: Path) -> DatasetDiscovery:
 
     return DatasetDiscovery(
         dataset_root=dataset_root,
+        dataset_name=window["name"],
         simulation_start=window["start"],
         simulation_end=window["end"],
         hosts=tuple(hosts),
