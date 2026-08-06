@@ -8,6 +8,7 @@ import typer
 
 from tracerloom.config import TracerloomConfig, load_config
 from tracerloom.discovery.scan import discover_dataset
+from tracerloom.ingest.pipeline import IngestResult
 from tracerloom.logging_setup import configure_logging
 from tracerloom.orchestration import (
     load_events_from_parquet,
@@ -84,16 +85,10 @@ def inspect(
         typer.echo(f"warning: {warning}")
 
 
-@app.command()
-def ingest(
-    dataset_root: Path = typer.Option(Path("russellmitchell_no-pcaps"), "--dataset-root"),
-    output_root: Path | None = typer.Option(None, "--output-root"),
-    config: Path | None = typer.Option(None, "--config"),
+def _write_ingest_outputs(
+    resolved: TracerloomConfig, dataset_name: str, result: IngestResult
 ) -> None:
-    resolved = _resolve_config(config, dataset_root, output_root)
     resolved.output_root.mkdir(parents=True, exist_ok=True)
-    dataset_name, result = run_ingest_phase(resolved)
-
     _ingest_meta_path(resolved).write_text(
         json.dumps(
             {
@@ -111,16 +106,22 @@ def ingest(
     resolved.dead_letter_dir.mkdir(parents=True, exist_ok=True)
     (resolved.dead_letter_dir / "dead_letters.jsonl").write_text(
         "\n".join(
-            json.dumps(
-                {
-                    "raw_path": d.raw_path,
-                    "line_number": d.line_number,
-                    "reason": d.reason,
-                }
-            )
+            json.dumps({"raw_path": d.raw_path, "line_number": d.line_number, "reason": d.reason})
             for d in result.dead_letters
         )
     )
+
+
+@app.command()
+def ingest(
+    dataset_root: Path = typer.Option(Path("russellmitchell_no-pcaps"), "--dataset-root"),
+    output_root: Path | None = typer.Option(None, "--output-root"),
+    config: Path | None = typer.Option(None, "--config"),
+) -> None:
+    resolved = _resolve_config(config, dataset_root, output_root)
+    resolved.output_root.mkdir(parents=True, exist_ok=True)
+    dataset_name, result = run_ingest_phase(resolved)
+    _write_ingest_outputs(resolved, dataset_name, result)
     typer.echo(f"ingested {len(result.events)} events, {len(result.dead_letters)} dead-lettered")
 
 
@@ -188,6 +189,7 @@ def run(
     resolved.reports_dir.mkdir(parents=True, exist_ok=True)
 
     dataset_name, ingest_result = run_ingest_phase(resolved)
+    _write_ingest_outputs(resolved, dataset_name, ingest_result)
     alerts = run_detect_phase(ingest_result.events)
     chains = run_correlate_phase(alerts)
     evaluation_report = run_evaluate_phase(
