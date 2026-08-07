@@ -74,6 +74,16 @@ def test_apache_access_parses_status_and_path() -> None:
     assert outcome.event.action == "POST"
 
 
+def test_apache_access_parses_timed_out_dash_request_line() -> None:
+    parser = ApacheAccessLogParser()
+    line = '172.19.131.174 - - [23/Jan/2022:07:55:16 +0000] "-" 408 0 "-" "-"'
+    outcome = parser.parse_line("d", "webhost", "site-access.log", 5, line)
+    assert outcome.event is not None
+    assert outcome.event.outcome == "408"
+    assert outcome.event.action is None
+    assert outcome.event.resource is None
+
+
 def test_apache_access_dead_letters_malformed_line() -> None:
     parser = ApacheAccessLogParser()
     outcome = parser.parse_line(

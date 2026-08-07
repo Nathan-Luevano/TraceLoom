@@ -8,9 +8,10 @@ from tracerloom.parsing.timestamps import parse_apache_access_timestamp
 
 _LINE_PATTERN = re.compile(
     r"^(?P<ip>\S+)\s+\S+\s+(?P<user>\S+)\s+\[(?P<ts>[^\]]+)\]\s+"
-    r'"(?P<method>\S+)\s+(?P<path>\S+)\s+(?P<proto>[^"]+)"\s+'
+    r'"(?P<request>-|\S+\s+\S+\s+[^"]+)"\s+'
     r'(?P<status>\d{3})\s+(?P<size>\S+)\s+"(?P<referer>[^"]*)"\s+"(?P<agent>[^"]*)"$'
 )
+_REQUEST_LINE_PATTERN = re.compile(r"^(?P<method>\S+)\s+(?P<path>\S+)\s+(?P<proto>\S+)$")
 
 
 class ApacheAccessLogParser:
@@ -41,6 +42,12 @@ class ApacheAccessLogParser:
         user = match.group("user")
         principal = None if user == "-" else user
 
+        request = match.group("request")
+        request_match = _REQUEST_LINE_PATTERN.match(request)
+        method = request_match.group("method") if request_match else None
+        path = request_match.group("path") if request_match else None
+        proto = request_match.group("proto") if request_match else None
+
         event_id = compute_event_id(raw_path, line_number, content)
         event = NormalizedEvent(
             event_id=event_id,
@@ -51,14 +58,14 @@ class ApacheAccessLogParser:
             event_type="http_request",
             principal=principal,
             process="apache2",
-            action=match.group("method"),
-            resource=match.group("path"),
+            action=method,
+            resource=path,
             outcome=str(status),
             source_ip=match.group("ip"),
             source_port=None,
             destination_ip=None,
             destination_port=None,
-            protocol=match.group("proto"),
+            protocol=proto,
             raw_path=raw_path,
             raw_line=line_number,
             raw_event=content,
