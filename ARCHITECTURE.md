@@ -168,6 +168,3 @@ src/tracerloom/
   reporting/              JSON + Markdown rendering
   cli/                    Typer entry point
 ```
-
-[!WARNING]
-This architecture document is AI-generated and may nkt be 100% accurate.
