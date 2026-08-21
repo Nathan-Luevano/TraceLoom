@@ -8,40 +8,64 @@ ground-truth labels -- without ever letting labels leak into detection.
 
 ## Data flow
 
-```
-gather/<host>/logs/**          labels/<host>/logs/**
-        |                              |
-        v                              v
-  LocalFileEventSource  <----  label loader (labels/loader.py)
-        |                              |
-        |  (raw_path, line_number, content)  joined BEFORE parsing
-        v                              |
-  ingest/pipeline.py  --------->  GroundTruthEvent table (separate)
-        |
-        v  (per-line parser lookup by relative path)
-  parsing/registry.py -> parsing/parsers/*.py
-        |
-        v
-  NormalizedEvent (events/model.py) --or--> DeadLetter (parsing/base.py)
-        |
-        v
-  storage/parquet_store.py (partitioned: dataset/source_type/date)
-        |
-        v
-  detection/rules/*.py (Detector Protocol, reads NormalizedEvent only)
-        |
-        v
-  Alert (detection/alert.py)
-        |
-        v
-  correlation/engine.py -> AttackChainAlert
-        |
-        v
-  evaluation/metrics.py (joins Alert.evidence_event_ids against the
-                          separate GroundTruthEvent table by event_id)
-        |
-        v
-  reporting/{json_report,markdown_report}.py
+```mermaid
+flowchart TD
+    subgraph Sourcing["Event Sourcing & Labels"]
+        RawLogs["Raw Logs<br><code>gather/&lt;host&gt;/logs/**</code>"]
+        Labels["Sparse Labels<br><code>labels/&lt;host&gt;/logs/**</code>"]
+        EventSource["EventSource<br><i>(LocalFileEventSource)</i>"]
+        LabelLoader["Label Loader<br><i>(labels/loader.py)</i>"]
+    end
+
+    subgraph IngestPhase["Ingest & Normalization"]
+        IngestPipe["Ingest Pipeline<br><i>(ingest/pipeline.py)</i>"]
+        GroundTruthTable[("GroundTruthEvent Table<br><i>(Separate metadata)</i>")]
+        ParserRegistry["Parser Registry<br><i>(parsing/registry.py)</i>"]
+        Parsers["LineParsers<br><i>(parsing/parsers/*.py)</i>"]
+    end
+
+    subgraph StoragePhase["Storage"]
+        NormalizedEvents["NormalizedEvent<br><i>(events/model.py)</i>"]
+        DeadLetters["DeadLetter<br><i>(parsing/base.py)</i>"]
+        ParquetStore[("ParquetStore<br><i>(dataset/source_type/date)</i>")]
+        DeadLetterStore[("Dead-Letter Log<br><i>(dead_letters.jsonl)</i>")]
+    end
+
+    subgraph DetectionPhase["Detection & Correlation"]
+        Detectors["Detectors (7 Rules)<br><i>(detection/rules/*.py)</i>"]
+        Alerts["Alerts<br><i>(detection/alert.py)</i>"]
+        Correlation["CorrelationEngine<br><i>(correlation/engine.py)</i>"]
+        AttackChains["AttackChainAlerts"]
+    end
+
+    subgraph EvaluationPhase["Evaluation & Reporting"]
+        EvalEngine["Evaluation Engine<br><i>(evaluation/metrics.py)</i>"]
+        Reports["Reports<br><i>(JSON & Markdown)</i>"]
+    end
+
+    RawLogs --> EventSource
+    Labels --> LabelLoader
+    EventSource -->|"(raw_path, line_number, content)"| IngestPipe
+    LabelLoader -->|"Joined BEFORE parsing"| IngestPipe
+
+    IngestPipe --> GroundTruthTable
+    IngestPipe --> ParserRegistry
+    ParserRegistry --> Parsers
+    Parsers --> NormalizedEvents
+    Parsers --> DeadLetters
+
+    NormalizedEvents --> ParquetStore
+    DeadLetters --> DeadLetterStore
+
+    ParquetStore --> Detectors
+    Detectors --> Alerts
+    Alerts --> Correlation
+    Correlation --> AttackChains
+
+    Alerts --> EvalEngine
+    GroundTruthTable --> EvalEngine
+    AttackChains --> EvalEngine
+    EvalEngine --> Reports
 ```
 
 ## Why labels are joined before parsing
